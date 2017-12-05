@@ -9,11 +9,11 @@ from pytz import timezone, UTC
 from babel import support, Locale
 import flask
 
-import flask_babelplus as babel_ext
-from flask_babelplus import gettext, ngettext, pgettext, npgettext, \
+import more.babel_i18n as babel_ext
+from more.babel_i18n import gettext, ngettext, pgettext, npgettext, \
     lazy_gettext, lazy_pgettext
-from flask_babelplus._compat import text_type
-from flask_babelplus.utils import get_state, _get_format
+from more.babel_i18n._compat import text_type
+from more.babel_i18n.utils import get_state, _get_format
 
 
 class DateFormattingTestCase(unittest.TestCase):

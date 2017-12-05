@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    flask_babelplus
+    more.babel_i18n
     ~~~~~~~~~~~~~~~
 
     Implements i18n/l10n support for Flask applications based on Babel.

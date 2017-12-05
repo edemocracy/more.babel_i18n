@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    flask_babelplus.babel
+    more.babel_i18n.babel
     ~~~~~~~~~~~~~~~~~~~~~
 
     The actual Flask extension.

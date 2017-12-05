@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    flask_babelplus.constants
+    more.babel_i18n.constants
     ~~~~~~~~~~~~~~~~~~~~~~~~~
 
     This module contains the constants that are used in this

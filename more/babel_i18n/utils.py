@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    flask_babelplus.utils
+    more.babel_i18n.utils
     ~~~~~~~~~~~~~~~~~~~~~
 
     This module contains some utilities that are useful

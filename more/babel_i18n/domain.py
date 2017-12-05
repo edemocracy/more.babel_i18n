@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    flask_babelplus.domain
+    more.babel_i18n.domain
     ~~~~~~~~~~~~~~~~~~~~~~
 
     Localization domain.
