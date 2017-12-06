@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    more.babel_i18n.utils
-    ~~~~~~~~~~~~~~~~~~~~~
+    more.babel_i18n.request
+    ~~~~~~~~~~~~~~~~~~~~~~~
 
     :copyright:
         (c) 2017 by Tobias dpausp

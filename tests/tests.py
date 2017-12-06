@@ -19,7 +19,7 @@ import webob.request
 
 import more.babel_i18n as babel_ext
 from more.babel_i18n.core import BabelApp
-from more.babel_i18n.utils import BabelRequest
+from more.babel_i18n.request import BabelRequest
 
 text_type = str
 
