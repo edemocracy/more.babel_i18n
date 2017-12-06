@@ -54,6 +54,11 @@ def i18n(app):
     return app.test_request().i18n
 
 
+@fixture
+def babel(app):
+    return app.babel
+
+
 class TestDateFormatting:
 
     def test_basics(self, i18n):
@@ -100,16 +105,11 @@ class TestDateFormatting:
         assert i18n._get_format('datetime', 'medium') == 'medium'
         assert i18n._get_format('date', 'short') == 'MM d'
 
-
-class DateFormattingTestCase(unittest.TestCase):
-
-    def test_custom_locale_selector(self):
-        app = flask.Flask(__name__)
-        b = babel_ext.Babel(app)
+    def test_custom_locale_selector(self, app, i18n):
         d = datetime(2010, 4, 12, 13, 46)
-
-        the_timezone = 'UTC'
-        the_locale = 'en_US'
+        the_locale = 'de_DE'
+        the_timezone = 'Europe/Vienna'
+        b = app.babel
 
         @b.localeselector
         def select_locale():
@@ -119,42 +119,26 @@ class DateFormattingTestCase(unittest.TestCase):
         def select_timezone():
             return the_timezone
 
-        with app.test_request_context():
-            assert babel_ext.format_datetime(d) == 'Apr 12, 2010, 1:46:00 PM'
+        assert i18n.format_datetime(d) == '12.04.2010, 15:46:00'
 
-        the_locale = 'de_DE'
-        the_timezone = 'Europe/Vienna'
+        i18n.refresh()
+        the_timezone = 'UTC'
+        the_locale = 'en_US'
 
-        with app.test_request_context():
-            assert babel_ext.format_datetime(d) == '12.04.2010, 15:46:00'
+        assert i18n.format_datetime(d) == 'Apr 12, 2010, 1:46:00 PM'
 
-    def test_refreshing(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app)
-        d = datetime(2010, 4, 12, 13, 46)
-        babel_ext.refresh()  # nothing should be refreshed (see case below)
-        with app.test_request_context():
-            assert babel_ext.format_datetime(d) == 'Apr 12, 2010, 1:46:00 PM'
-            app.config['BABEL_DEFAULT_TIMEZONE'] = 'Europe/Vienna'
-            babel_ext.refresh()
-            assert babel_ext.format_datetime(d) == 'Apr 12, 2010, 3:46:00 PM'
 
-    def test_force_locale(self):
-        app = flask.Flask(__name__)
-        b = babel_ext.Babel(app)
+def test_force_locale(app, i18n):
+    b = app.babel
 
-        @b.localeselector
-        def select_locale():
-            return 'de_DE'
+    @b.localeselector
+    def select_locale():
+        return 'de_DE'
 
-        with babel_ext.force_locale('en_US'):
-            assert babel_ext.get_locale() is None
-
-        with app.test_request_context():
-            assert str(babel_ext.get_locale()) == 'de_DE'
-            with babel_ext.force_locale('en_US'):
-                assert str(babel_ext.get_locale()) == 'en_US'
-            assert str(babel_ext.get_locale()) == 'de_DE'
+    assert str(i18n.get_locale()) == 'de_DE'
+    with i18n.force_locale('en_US'):
+        assert str(i18n.get_locale()) == 'en_US'
+    assert str(i18n.get_locale()) == 'de_DE'
 
 
 class NumberFormattingTestCase(unittest.TestCase):

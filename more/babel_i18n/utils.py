@@ -35,15 +35,17 @@ class BabelRequestUtils:
     def __init__(self, request):
         self.request = request
         self.babel = request.app.babel
+        self.locale = None
+        self.tzinfo = None
 
     def get_locale(self):
         """Returns the locale that should be used for this request as
         `babel.Locale` object.  This returns `None` if used outside of
         a request.
         """
-        locale = getattr(self.request, 'babel_locale', None)
+        locale = self.locale
         # no locale found on current request context
-        if locale is None:
+        if self.locale is None:
             if self.babel.locale_selector_func is not None:
                 locale = self.babel.load_locale(
                     self.babel.locale_selector_func()
@@ -51,15 +53,14 @@ class BabelRequestUtils:
             else:
                 locale = self.babel.default_locale
 
-            # set the locale for the current request
-            self.request.babel_locale = locale
+            self.locale = locale
 
         return locale
 
     def get_timezone(self):
         """Returns the timezone that should be used for this request as `pytz.timezone` object.
         """
-        tzinfo = getattr(self.request, 'babel_tzinfo', None)
+        tzinfo = self.tzinfo
         if tzinfo is None:
             if self.babel.timezone_selector_func is not None:
                 rv = self.babel.timezone_selector_func()
@@ -72,7 +73,9 @@ class BabelRequestUtils:
                         tzinfo = rv
             else:
                 tzinfo = self.babel.default_timezone
-            self.request.babel_tzinfo = tzinfo
+
+            self.tzinfo = tzinfo
+
         return tzinfo
 
     def refresh(self):
@@ -88,9 +91,8 @@ class BabelRequestUtils:
         Without that refresh, the :func:`~flask.flash` function would probably
         return English text and a now German page.
         """
-        for key in ('babel_locale', 'babel_tzinfo'):
-            if hasattr(self.request, key):
-                delattr(self.request, key)
+        self.tzinfo = None
+        self.locale = None
 
     @contextmanager
     def force_locale(self, locale):
@@ -106,18 +108,18 @@ class BabelRequestUtils:
 
         :param locale: The locale to temporary switch to (ex: 'en_US').
         """
-        orig_locale_selector_func = self.app.babel.locale_selector_func
+        orig_locale_selector_func = self.babel.locale_selector_func
         orig_attrs = {}
-        for key in ('babel_translations', 'babel_locale'):
+        for key in ('translations', 'locale'):
             orig_attrs[key] = getattr(self, key, None)
 
         try:
-            self.app.babel.locale_selector_func = lambda: locale
+            self.babel.locale_selector_func = lambda: locale
             for key in orig_attrs:
                 setattr(self, key, None)
             yield
         finally:
-            self.app.babel.locale_selector_func = orig_locale_selector_func
+            self.babel.locale_selector_func = orig_locale_selector_func
             for key, value in orig_attrs.items():
                 setattr(self, key, value)
 
