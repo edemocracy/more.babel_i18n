@@ -141,19 +141,16 @@ def test_force_locale(app, i18n):
     assert str(i18n.get_locale()) == 'de_DE'
 
 
-class NumberFormattingTestCase(unittest.TestCase):
+class TestNumberFormatting:
 
-    def test_basics(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app)
+    def test_basics(self, i18n):
         n = 1099
 
-        with app.test_request_context():
-            assert babel_ext.format_number(n) == u'1,099'
-            assert babel_ext.format_decimal(Decimal('1010.99')) == u'1,010.99'
-            assert babel_ext.format_currency(n, 'USD') == '$1,099.00'
-            assert babel_ext.format_percent(0.19) == '19%'
-            assert babel_ext.format_scientific(10000) == u'1E4'
+        assert i18n.format_number(n) == u'1,099'
+        assert i18n.format_decimal(Decimal('1010.99')) == u'1,010.99'
+        assert i18n.format_currency(n, 'USD') == '$1,099.00'
+        assert i18n.format_percent(0.19) == '19%'
+        assert i18n.format_scientific(10000) == u'1E4'
 
 
 class GettextTestCase(unittest.TestCase):

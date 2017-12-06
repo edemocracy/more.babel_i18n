@@ -247,7 +247,7 @@ class BabelRequestUtils:
         locale = self.get_locale()
         return numbers.format_number(number, locale=locale)
 
-    def format_decimal(number, format=None):
+    def format_decimal(self, number, format=None):
         """Return the given decimal number formatted for the locale in request
 
         :param number: the number to format
@@ -258,7 +258,7 @@ class BabelRequestUtils:
         locale = self.get_locale()
         return numbers.format_decimal(number, format=format, locale=locale)
 
-    def format_currency(number, currency, format=None, currency_digits=True,
+    def format_currency(self, number, currency, format=None, currency_digits=True,
                         format_type='standard'):
         """Return the given number formatted for the locale in request
         :param number: the number to format
@@ -281,7 +281,7 @@ class BabelRequestUtils:
             format_type=format_type
         )
 
-    def format_percent(number, format=None):
+    def format_percent(self, number, format=None):
         """Return formatted percent value for the locale in request
 
         :param number: the number to format
@@ -292,7 +292,7 @@ class BabelRequestUtils:
         locale = self.get_locale()
         return numbers.format_percent(number, format=format, locale=locale)
 
-    def format_scientific(number, format=None):
+    def format_scientific(self, number, format=None):
         """Return value formatted in scientific notation for the locale in request
 
         :param number: the number to format
