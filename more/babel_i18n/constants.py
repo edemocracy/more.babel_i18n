@@ -9,11 +9,10 @@
     :copyright: (c) 2013 by Armin Ronacher, Daniel Neuhäuser and contributors.
     :license: BSD, see LICENSE for more details.
 """
-from werkzeug import ImmutableDict
 
 DEFAULT_LOCALE = "en"
 DEFAULT_TIMEZONE = "UTC"
-DEFAULT_DATE_FORMATS = ImmutableDict({
+DEFAULT_DATE_FORMATS = {
     'time': 'medium',
     'date': 'medium',
     'datetime': 'medium',
@@ -29,4 +28,4 @@ DEFAULT_DATE_FORMATS = ImmutableDict({
     'datetime.medium': None,
     'datetime.full': None,
     'datetime.long': None,
-})
+}

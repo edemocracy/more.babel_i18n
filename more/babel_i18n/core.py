@@ -5,11 +5,15 @@
 
     The actual Flask extension.
 
-    :copyright: (c) 2013 by Armin Ronacher, Daniel Neuhäuser and contributors.
+    :copyright:
+        (c) 2017 by Tobias dpausp
+        (c) 2013 by Armin Ronacher, Daniel Neuhäuser and contributors.
     :license: BSD, see LICENSE for more details.
 """
 import os
 from babel import Locale
+import morepath
+from more.babel_i18n.domain import Domain
 try:
     from pytz.gae import pytz
 except ImportError:
@@ -19,58 +23,19 @@ else:
 
 from .constants import DEFAULT_LOCALE, DEFAULT_TIMEZONE,\
     DEFAULT_DATE_FORMATS
-from .domain import Domain, get_domain
-from .utils import format_datetime, format_date, format_time, \
-    format_timedelta, format_number, format_decimal, format_currency, \
-    format_percent, format_scientific, get_state
 
 
-class Babel(object):
+class BabelApp(morepath.App):
     """Central controller class that can be used to configure how
     Flask-Babel behaves.  Each application that wants to use Flask-Babel
     has to create, or run :meth:`init_app` on, an instance of this class
     after the configuration was initialized.
     """
 
-    def __init__(self, app=None, **kwargs):
-        """Initializes the Flask-BabelPlus extension.
-
-        :param app: The Flask application.
-        :param kwargs: Optional arguments that will be passed to
-                       ``init_app``.
+    def babel_init(self):
+        """Initializes the more.babel_i18n App.
         """
-        self.app = app
-        self.locale_selector_func = None
-        self.timezone_selector_func = None
-
-        if app is not None:
-            self.init_app(app, **kwargs)
-
-    def init_app(self, app, default_locale=DEFAULT_LOCALE,
-                 default_timezone=DEFAULT_TIMEZONE, date_formats=None,
-                 configure_jinja=True, default_domain=None):
-        """Initializes the Flask-BabelPlus extension.
-
-        :param app: The Flask application.
-        :param default_locale: The default locale which should be used.
-                               Defaults to 'en'.
-        :param default_timezone: The default timezone. Defaults to 'UTC'.
-        :param date_formats: A mapping of Babel datetime format strings
-        :param configure_jinja: If set to ``True`` some convenient jinja2
-                                filters are being added.
-        :param default_domain: The default translation domain.
-        """
-        if default_domain is None:
-            default_domain = Domain()
-
-        app.config.setdefault('BABEL_DEFAULT_LOCALE', default_locale)
-        app.config.setdefault('BABEL_DEFAULT_TIMEZONE', default_timezone)
-        app.config.setdefault('BABEL_CONFIGURE_JINJA', configure_jinja)
-        app.config.setdefault('BABEL_DOMAIN', default_domain)
-
-        app.extensions['babel'] = _BabelState(babel=self, app=app,
-                                              domain=default_domain)
-
+        cfg = self.settings.babel_i18n
         #: a mapping of Babel datetime format strings that can be modified
         #: to change the defaults.  If you invoke :func:`format_datetime`
         #: and do not provide any format string Flask-Babel will do the
@@ -82,10 +47,10 @@ class Babel(object):
         #:      returned in step one) is looked up.  If the return value
         #:      is anything but `None` this is used as new format string.
         #:      otherwise the default for that language is used.
-        self.date_formats = date_formats or DEFAULT_DATE_FORMATS.copy()
+        self.babel = BabelI18n(self, domain=cfg.domain, date_formats=DEFAULT_DATE_FORMATS.copy())
 
-        if configure_jinja:
-            app.jinja_env.filters.update(
+        if cfg.configure_jinja:
+            self.jinja_env.filters.update(
                 datetimeformat=format_datetime,
                 dateformat=format_date,
                 timeformat=format_time,
@@ -97,13 +62,24 @@ class Babel(object):
                 percentformat=format_percent,
                 scientificformat=format_scientific,
             )
-            app.jinja_env.add_extension('jinja2.ext.i18n')
-            app.jinja_env.install_gettext_callables(
+            self.jinja_env.add_extension('jinja2.ext.i18n')
+            self.jinja_env.install_gettext_callables(
                 lambda x: get_domain().get_translations().ugettext(x),
                 lambda s, p, n: get_domain().get_translations()
                                             .ungettext(s, p, n),
                 newstyle=True
             )
+
+
+class BabelI18n:
+    def __init__(self, app, domain, date_formats):
+        self.app = app
+        self.settings = self.app.settings.babel_i18n
+        self.domain = domain
+        self.date_formats = date_formats
+        self.locale_selector_func = None
+        self.timezone_selector_func = None
+        self.locale_cache = {}
 
     def localeselector(self, f):
         """Registers a callback function for locale selection.  The default
@@ -136,8 +112,7 @@ class Babel(object):
         """
 
         # XXX: Wouldn't it be better to list the locales from the domain?
-        state = get_state()
-        dirname = os.path.join(state.app.root_path, 'translations')
+        dirname = os.path.join(self.app.root_path, 'translations')
         if not os.path.isdir(dirname):
             return []
         result = []
@@ -156,35 +131,33 @@ class Babel(object):
         """The default locale from the configuration as instance of a
         `babel.Locale` object.
         """
-        state = get_state()
-        return self.load_locale(state.app.config['BABEL_DEFAULT_LOCALE'])
+        return self.load_locale(self.settings.default_locale)
 
     @property
     def default_timezone(self):
         """The default timezone from the configuration as instance of a
         `pytz.timezone` object.
         """
-        state = get_state()
-        return timezone(state.app.config['BABEL_DEFAULT_TIMEZONE'])
+        return timezone(self.settings.default_timezone)
 
     def load_locale(self, locale):
         """Load locale by name and cache it. Returns instance of a
         `babel.Locale` object.
         """
-        state = get_state()
-        rv = state.locale_cache.get(locale)
+        rv = self.locale_cache.get(locale)
         if rv is None:
-            state.locale_cache[locale] = rv = Locale.parse(locale)
+            self.locale_cache[locale] = rv = Locale.parse(locale)
         return rv
 
-
-class _BabelState(object):
-    def __init__(self, babel, app, domain):
-        self.babel = babel
-        self.app = app
-        self.domain = domain
-        self.locale_cache = {}
-
     def __repr__(self):
-        return '<_BabelState({}, {}, {})>'.format(self.babel, self.app,
-                                                  self.domain)
+        return '<BabelI18n({}, {})>'.format(self.babel, self.domain)
+
+
+@BabelApp.setting_section(section="babel_i18n")
+def babel_i18n_settings():
+    return {
+        'default_locale': DEFAULT_LOCALE,
+        'default_timezone': DEFAULT_TIMEZONE,
+        'configure_jinja': True,
+        'domain': Domain()
+    }

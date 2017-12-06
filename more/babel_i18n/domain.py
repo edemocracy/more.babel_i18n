@@ -5,13 +5,14 @@
 
     Localization domain.
 
-    :copyright: (c) 2013 by Armin Ronacher, Daniel Neuhäuser and contributors.
+    :copyright:
+        (c) 2017 by Tobias dpausp
+        (c) 2013 by Armin Ronacher, Daniel Neuhäuser and contributors.
     :license: BSD, see LICENSE for more details.
 """
 import os
 from babel import support
 
-from .utils import get_state, get_locale
 from .speaklater import LazyString
 
 
@@ -21,7 +22,8 @@ class Domain(object):
     catalogs should be called ``messages.mo``.
     """
 
-    def __init__(self, dirname=None, domain='messages'):
+    def __init__(self, request=None, dirname=None, domain='messages'):
+        self.request = request
         self.dirname = dirname
         self.domain = domain
 
@@ -29,7 +31,7 @@ class Domain(object):
 
     def as_default(self):
         """Set this domain as the default one for the current request"""
-        get_state().domain = self
+        self.request.domain = self
 
     def get_translations_cache(self):
         """Returns a dictionary-like object for translation caching"""
@@ -47,17 +49,16 @@ class Domain(object):
         object if used outside of the request or if a translation cannot be
         found.
         """
-        state = get_state(silent=True)
 
-        if state is None:
+        if self.request is None:
             return support.NullTranslations()
 
-        locale = get_locale()
+        locale = self.request.babel.get_locale()
         cache = self.get_translations_cache()
 
         translations = cache.get(str(locale))
         if translations is None:
-            dirname = self.get_translations_path(state.app)
+            dirname = self.get_translations_path(self.request.app)
             translations = support.Translations.load(
                 dirname,
                 locale,
@@ -157,22 +158,11 @@ class Domain(object):
 domain = Domain()
 
 
-def get_domain():
-    """Return the correct translation domain that is used for this request.
-    This will return the default domain
-    e.g. "messages" in <approot>/translations" if none is set for this
-    request.
-    """
-    state = get_state(silent=True)
-    if state is None:
-        return domain
-
-    return state.domain
-
-
 # Create shortcuts for the default Flask domain
 def gettext(*args, **kwargs):
     return get_domain().gettext(*args, **kwargs)
+
+
 _ = gettext  # noqa
 
 

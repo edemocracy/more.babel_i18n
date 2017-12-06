@@ -10,10 +10,12 @@
       - https://github.com/python-babel/flask-babel/blob/master/flask_babel/speaklater.py
       - https://github.com/mitsuhiko/speaklater/blob/master/speaklater.py
 
-    :copyright: (c) 2010 by Armin Ronacher.
+    :copyright:
+        (c) 2017 by Tobias dpausp
+        (c) 2010 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
-from ._compat import text_type
+text_type = str
 
 
 class LazyString(object):

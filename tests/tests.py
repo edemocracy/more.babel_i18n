@@ -1,76 +1,91 @@
 # -*- coding: utf-8 -*-
+"""
+    :copyright:
+        (c) 2017 by Tobias dpausp
+        (c) 2016 by Armin Ronacher, Daniel Neuhäuser and contributors.
+    :license: BSD, see LICENSE for more details.
+"""
 from __future__ import with_statement
 import unittest
-import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
 
 from pytz import timezone, UTC
 from babel import support, Locale
-import flask
+import morepath
+import pytest
+from pytest import fixture, yield_fixture
+import webob.request
 
 import more.babel_i18n as babel_ext
-from more.babel_i18n import gettext, ngettext, pgettext, npgettext, \
-    lazy_gettext, lazy_pgettext
-from more.babel_i18n._compat import text_type
-from more.babel_i18n.utils import get_state, _get_format
+from more.babel_i18n.core import BabelApp
+from more.babel_i18n.utils import BabelRequest
+
+text_type = str
 
 
-class DateFormattingTestCase(unittest.TestCase):
+@fixture
+def app():
+    class TestApp(BabelApp):
+        def test_request(self):
+            environ = webob.request.BaseRequest.blank('/').environ
+            request = BabelRequest(environ, self)
+            return request
 
-    def test_basics(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app)
+    babel_settings = {
+        'configure_jinja': False
+    }
+    morepath.autoscan()
+    TestApp.init_settings(dict(babel_i18n=babel_settings))
+    TestApp.commit()
+
+    app = TestApp()
+    app.babel_init()
+    return app
+
+
+@fixture
+def request(app):
+    return app.test_request()
+
+
+@fixture
+def i18n(app):
+    return app.test_request().i18n
+
+
+class TestDateFormatting:
+
+    def test_basics(self, i18n):
         d = datetime(2010, 4, 12, 13, 46)
         delta = timedelta(days=6)
 
-        with app.test_request_context():
-            assert babel_ext.format_datetime(d) == 'Apr 12, 2010, 1:46:00 PM'
-            assert babel_ext.format_date(d) == 'Apr 12, 2010'
-            assert babel_ext.format_time(d) == '1:46:00 PM'
-            assert babel_ext.format_timedelta(delta) == '1 week'
-            assert babel_ext.format_timedelta(delta, threshold=1) == '6 days'
+        assert i18n.format_datetime(d) == 'Apr 12, 2010, 1:46:00 PM'
+        assert i18n.format_date(d) == 'Apr 12, 2010'
+        assert i18n.format_time(d) == '1:46:00 PM'
+        assert i18n.format_timedelta(delta) == '1 week'
+        assert i18n.format_timedelta(delta, threshold=1) == '6 days'
 
-        with app.test_request_context():
-            app.config['BABEL_DEFAULT_TIMEZONE'] = 'Europe/Vienna'
-            assert babel_ext.format_datetime(d) == 'Apr 12, 2010, 3:46:00 PM'
-            assert babel_ext.format_date(d) == 'Apr 12, 2010'
-            assert babel_ext.format_time(d) == '3:46:00 PM'
-
-        with app.test_request_context():
-            app.config['BABEL_DEFAULT_LOCALE'] = 'de_DE'
-            assert babel_ext.format_datetime(d, 'long') == \
-                '12. April 2010 um 15:46:00 MESZ'
-
-    def test_init_app(self):
-        b = babel_ext.Babel()
-        app = flask.Flask(__name__)
-        b.init_app(app)
+    def test_basics_with_timezone(self, app, i18n):
+        app.settings.babel_i18n.default_timezone = 'Europe/Vienna'
         d = datetime(2010, 4, 12, 13, 46)
 
-        with app.test_request_context():
-            assert babel_ext.format_datetime(d) == 'Apr 12, 2010, 1:46:00 PM'
-            assert babel_ext.format_date(d) == 'Apr 12, 2010'
-            assert babel_ext.format_time(d) == '1:46:00 PM'
+        assert i18n.format_datetime(d) == 'Apr 12, 2010, 3:46:00 PM'
+        assert i18n.format_date(d) == 'Apr 12, 2010'
+        assert i18n.format_time(d) == '3:46:00 PM'
 
-        with app.test_request_context():
-            app.config['BABEL_DEFAULT_TIMEZONE'] = 'Europe/Vienna'
-            assert babel_ext.format_datetime(d) == 'Apr 12, 2010, 3:46:00 PM'
-            assert babel_ext.format_date(d) == 'Apr 12, 2010'
-            assert babel_ext.format_time(d) == '3:46:00 PM'
+    def test_basics_with_timezone_and_locale(self, app, i18n):
+        app.settings.babel_i18n.default_locale = 'de_DE'
+        app.settings.babel_i18n.default_timezone = 'Europe/Vienna'
+        d = datetime(2010, 4, 12, 13, 46)
 
-        with app.test_request_context():
-            app.config['BABEL_DEFAULT_LOCALE'] = 'de_DE'
-            assert babel_ext.format_datetime(d, 'long') == \
-                '12. April 2010 um 15:46:00 MESZ'
+        assert i18n.format_datetime(d, 'long') == '12. April 2010 um 15:46:00 MESZ'
 
-    def test_custom_formats(self):
-        app = flask.Flask(__name__)
-        app.config.update(
-            BABEL_DEFAULT_LOCALE='en_US',
-            BABEL_DEFAULT_TIMEZONE='Pacific/Johnston'
-        )
-        b = babel_ext.Babel(app)
+    def test_custom_formats(self, app, i18n):
+        app.settings.babel_i18n.default_locale = 'en_US'
+        app.settings.babel_i18n.default_timezone = 'Pacific/Johnston'
+        b = app.babel
+
         b.date_formats['datetime'] = 'long'
         b.date_formats['datetime.long'] = 'MMMM d, yyyy h:mm:ss a'
 
@@ -79,12 +94,14 @@ class DateFormattingTestCase(unittest.TestCase):
 
         d = datetime(2010, 4, 12, 13, 46)
 
-        with app.test_request_context():
-            assert babel_ext.format_datetime(d) == 'April 12, 2010 3:46:00 AM'
-            assert _get_format('datetime') == 'MMMM d, yyyy h:mm:ss a'
-            # none; returns the format
-            assert _get_format('datetime', 'medium') == 'medium'
-            assert _get_format('date', 'short') == 'MM d'
+        assert i18n.format_datetime(d) == 'April 12, 2010 3:46:00 AM'
+        assert i18n._get_format('datetime') == 'MMMM d, yyyy h:mm:ss a'
+        # none; returns the format
+        assert i18n._get_format('datetime', 'medium') == 'medium'
+        assert i18n._get_format('date', 'short') == 'MM d'
+
+
+class DateFormattingTestCase(unittest.TestCase):
 
     def test_custom_locale_selector(self):
         app = flask.Flask(__name__)
