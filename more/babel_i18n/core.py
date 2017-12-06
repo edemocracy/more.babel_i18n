@@ -47,7 +47,8 @@ class BabelApp(morepath.App):
         #:      returned in step one) is looked up.  If the return value
         #:      is anything but `None` this is used as new format string.
         #:      otherwise the default for that language is used.
-        self.babel = BabelI18n(self, domain=cfg.domain, date_formats=DEFAULT_DATE_FORMATS.copy())
+        domain = Domain(domain=cfg.domain)
+        self.babel = BabelI18n(self, domain=domain, date_formats=DEFAULT_DATE_FORMATS.copy())
 
         if cfg.configure_jinja:
             self.jinja_env.filters.update(
@@ -74,8 +75,8 @@ class BabelApp(morepath.App):
 class BabelI18n:
     def __init__(self, app, domain, date_formats):
         self.app = app
-        self.settings = self.app.settings.babel_i18n
         self.domain = domain
+        self.settings = self.app.settings.babel_i18n
         self.date_formats = date_formats
         self.locale_selector_func = None
         self.timezone_selector_func = None
@@ -159,5 +160,5 @@ def babel_i18n_settings():
         'default_locale': DEFAULT_LOCALE,
         'default_timezone': DEFAULT_TIMEZONE,
         'configure_jinja': True,
-        'domain': Domain()
+        'domain': 'messages'
     }

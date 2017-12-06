@@ -6,6 +6,7 @@
     :license: BSD, see LICENSE for more details.
 """
 from __future__ import with_statement
+import os.path
 import unittest
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -20,6 +21,7 @@ import webob.request
 import more.babel_i18n as babel_ext
 from more.babel_i18n.core import BabelApp
 from more.babel_i18n.request import BabelRequest
+from more.babel_i18n.domain import Domain
 
 text_type = str
 
@@ -27,6 +29,8 @@ text_type = str
 @fixture
 def app():
     class TestApp(BabelApp):
+        root_path = os.path.dirname(__file__)
+
         def test_request(self):
             environ = webob.request.BaseRequest.blank('/').environ
             request = BabelRequest(environ, self)
@@ -50,8 +54,8 @@ def request(app):
 
 
 @fixture
-def i18n(app):
-    return app.test_request().i18n
+def i18n(request):
+    return request.i18n
 
 
 @fixture
@@ -153,22 +157,89 @@ class TestNumberFormatting:
         assert i18n.format_scientific(10000) == u'1E4'
 
 
+class TestGettext:
+    def test_basics(self, app, i18n):
+        app.settings.babel_i18n.default_locale = 'de_DE'
+
+        assert i18n.gettext(u'Hello %(name)s!', name='Peter') == 'Hallo Peter!'
+        assert i18n.ngettext(u'%(num)s Apple', u'%(num)s Apples', 3) == u'3 Äpfel'  # noqa
+        assert i18n.ngettext(u'%(num)s Apple', u'%(num)s Apples', 1) == u'1 Apfel'  # noqa
+
+        assert i18n.pgettext(u'button', u'Hello %(name)s!', name='Peter') == 'Hallo Peter!'  # noqa
+        assert i18n.pgettext(u'dialog', u'Hello %(name)s!', name='Peter') == 'Hallo Peter!'  # noqa
+        assert i18n.pgettext(u'button', u'Hello Guest!') == 'Hallo Gast!'
+        assert i18n.npgettext(u'shop', u'%(num)s Apple', u'%(num)s Apples', 3) == u'3 Äpfel'  # noqa
+        assert i18n.npgettext(u'fruits', u'%(num)s Apple', u'%(num)s Apples', 3) == u'3 Äpfel'  # noqa
+
+    def test_lazy_gettext(self, app, i18n):
+        yes = i18n.lazy_gettext(u'Yes')
+        app.settings.babel_i18n.default_locale = 'de_DE'
+        assert str(yes) == 'Ja'
+
+        i18n.refresh()
+        app.settings.babel_i18n.default_locale = 'en_US'
+        assert str(yes) == 'Yes'
+
+    def test_no_formatting(self, i18n):
+        """
+        Ensure we don't format strings unless a variable is passed.
+        """
+        assert i18n.gettext(u'Test %s') == u'Test %s'
+        assert i18n.gettext(u'Test %(name)s', name=u'test') == u'Test test'
+        assert i18n.gettext(u'Test %s') % 'test' == u'Test test'
+
+    def test_lazy_pgettext(self, app, request, i18n):
+        app.settings.babel_i18n.default_locale = 'de_DE'
+        domain = Domain(request, domain='messages')
+        domain_first = domain.lazy_pgettext('button', 'Hello Guest!')
+        first = i18n.lazy_pgettext('button', 'Hello Guest!')
+
+        assert str(domain_first) == 'Hallo Gast!'
+        assert str(first) == 'Hallo Gast!'
+
+        i18n.refresh()
+        app.settings.babel_i18n.default_locale = 'en_US'
+        assert str(first) == 'Hello Guest!'
+        assert str(domain_first) == 'Hello Guest!'
+
+    def test_lazy_gettext_defaultdomain(self, app, request, i18n):
+        app.settings.babel_i18n.domain = 'test'
+        app.settings.babel_i18n.default_locale = 'de_DE'
+        # some hacks because the domain has been changed after app creation
+        app.babel_init()
+        i18n.babel = app.babel
+        app.babel.domain.request = request
+
+        first = i18n.lazy_gettext('first')
+        domain_first = app.babel.domain.lazy_gettext('first')
+
+        assert str(first) == 'erste'
+        assert str(domain_first) == 'erste'
+
+        i18n.refresh()
+        app.settings.babel_i18n.default_locale = 'en_US'
+        assert str(first) == 'first'
+        assert str(domain_first) == 'first'
+
+    def test_no_request_gettext(self, app):
+        app.settings.babel_i18n.default_locale = 'de_DE'
+        domain = app.babel.domain
+        assert domain.gettext('Yes') == 'Yes'
+
+    def test_list_translations(self, app):
+        app.settings.babel_i18n.default_locale = 'de_DE'
+
+        translations = app.babel.list_translations()
+        assert len(translations) == 1
+        assert str(translations[0]) == 'de'
+
+    def test_get_translations_should_be_null_without_request(self, app):
+        domain = app.babel.domain
+
+        assert isinstance(domain.get_translations(), support.NullTranslations)
+
+
 class GettextTestCase(unittest.TestCase):
-
-    def test_basics(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app, default_locale='de_DE')
-
-        with app.test_request_context():
-            assert gettext(u'Hello %(name)s!', name='Peter') == 'Hallo Peter!'
-            assert ngettext(u'%(num)s Apple', u'%(num)s Apples', 3) == u'3 Äpfel'  # noqa
-            assert ngettext(u'%(num)s Apple', u'%(num)s Apples', 1) == u'1 Apfel'  # noqa
-
-            assert pgettext(u'button', u'Hello %(name)s!', name='Peter') == 'Hallo Peter!'  # noqa
-            assert pgettext(u'dialog', u'Hello %(name)s!', name='Peter') == 'Hallo Peter!'  # noqa
-            assert pgettext(u'button', u'Hello Guest!') == 'Hallo Gast!'
-            assert npgettext(u'shop', u'%(num)s Apple', u'%(num)s Apples', 3) == u'3 Äpfel'  # noqa
-            assert npgettext(u'fruits', u'%(num)s Apple', u'%(num)s Apples', 3) == u'3 Äpfel'  # noqa
 
     def test_template_basics(self):
         app = flask.Flask(__name__)
@@ -188,85 +259,6 @@ class GettextTestCase(unittest.TestCase):
                 {% trans num=3 %}{{ num }} Apple
                 {%- pluralize %}{{ num }} Apples{% endtrans %}
             ''', name='Peter').strip() == u'3 Äpfel'
-
-    def test_lazy_gettext(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app, default_locale='de_DE')
-        yes = lazy_gettext(u'Yes')
-        with app.test_request_context():
-            assert text_type(yes) == 'Ja'
-        app.config['BABEL_DEFAULT_LOCALE'] = 'en_US'
-        with app.test_request_context():
-            assert text_type(yes) == 'Yes'
-
-    def test_no_formatting(self):
-        """
-        Ensure we don't format strings unless a variable is passed.
-        """
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app)
-
-        with app.test_request_context():
-            assert gettext(u'Test %s') == u'Test %s'
-            assert gettext(u'Test %(name)s', name=u'test') == u'Test test'
-            assert gettext(u'Test %s') % 'test' == u'Test test'
-
-    def test_lazy_gettext_defaultdomain(self):
-        app = flask.Flask(__name__)
-        domain = babel_ext.Domain(domain='test')
-        babel_ext.Babel(app, default_locale='de_DE', default_domain=domain)
-        first = lazy_gettext('first')
-        domain_first = domain.lazy_gettext('first')
-
-        with app.test_request_context():
-            assert text_type(domain_first) == 'erste'
-            assert text_type(first) == 'erste'
-
-        app.config['BABEL_DEFAULT_LOCALE'] = 'en_US'
-        with app.test_request_context():
-            assert text_type(first) == 'first'
-            assert text_type(domain_first) == 'first'
-
-    def test_lazy_pgettext(self):
-        app = flask.Flask(__name__)
-        domain = babel_ext.Domain(domain='messages')
-        babel_ext.Babel(app, default_locale='de_DE')
-        first = lazy_pgettext('button', 'Hello Guest!')
-        domain_first = domain.lazy_pgettext('button', 'Hello Guest!')
-
-        with app.test_request_context():
-            assert text_type(domain_first) == 'Hallo Gast!'
-            assert text_type(first) == 'Hallo Gast!'
-
-        app.config['BABEL_DEFAULT_LOCALE'] = 'en_US'
-        with app.test_request_context():
-            assert text_type(first) == 'Hello Guest!'
-            assert text_type(domain_first) == 'Hello Guest!'
-
-    def test_no_ctx_gettext(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app, default_locale='de_DE')
-        domain = babel_ext.get_domain()
-        assert domain.gettext('Yes') == 'Yes'
-
-    def test_list_translations(self):
-        app = flask.Flask(__name__)
-        b = babel_ext.Babel(app, default_locale='de_DE')
-
-        # an app_context is automatically created when a request context
-        # is pushed if necessary
-        with app.test_request_context():
-            translations = b.list_translations()
-            assert len(translations) == 1
-            assert str(translations[0]) == 'de'
-
-    def test_get_translations(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app, default_locale='de_DE')
-        domain = babel_ext.get_domain()  # using default domain
-
-        # no app context
-        assert isinstance(domain.get_translations(), support.NullTranslations)
 
     def test_domain(self):
         app = flask.Flask(__name__)

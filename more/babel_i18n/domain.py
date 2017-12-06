@@ -31,7 +31,7 @@ class Domain(object):
 
     def as_default(self):
         """Set this domain as the default one for the current request"""
-        self.request.domain = self
+        self.request.i18n.domain = self
 
     def get_translations_cache(self):
         """Returns a dictionary-like object for translation caching"""
@@ -53,7 +53,7 @@ class Domain(object):
         if self.request is None:
             return support.NullTranslations()
 
-        locale = self.request.babel.get_locale()
+        locale = self.request.i18n.get_locale()
         cache = self.get_translations_cache()
 
         translations = cache.get(str(locale))
@@ -148,39 +148,3 @@ class Domain(object):
         .. versionadded:: 0.7
         """
         return LazyString(self.pgettext, context, string, **variables)
-
-
-# This is the domain that will be used if there is no request context
-# and thus no app.
-# It will also use this domain if the app isn't initialized for babel.
-# Note that if there is no request context, then the standard
-# Domain will use NullTranslations.
-domain = Domain()
-
-
-# Create shortcuts for the default Flask domain
-def gettext(*args, **kwargs):
-    return get_domain().gettext(*args, **kwargs)
-
-
-_ = gettext  # noqa
-
-
-def ngettext(*args, **kwargs):
-    return get_domain().ngettext(*args, **kwargs)
-
-
-def pgettext(*args, **kwargs):
-    return get_domain().pgettext(*args, **kwargs)
-
-
-def npgettext(*args, **kwargs):
-    return get_domain().npgettext(*args, **kwargs)
-
-
-def lazy_gettext(*args, **kwargs):
-    return LazyString(gettext, *args, **kwargs)
-
-
-def lazy_pgettext(*args, **kwargs):
-    return LazyString(pgettext, *args, **kwargs)

@@ -12,6 +12,8 @@ from datetime import datetime
 from contextlib import contextmanager
 from babel import dates, numbers
 import morepath
+from more.babel_i18n.speaklater import LazyString
+from more.babel_i18n.domain import Domain
 try:
     from pytz.gae import pytz
 except ImportError:
@@ -37,6 +39,8 @@ class BabelRequestUtils:
         self.babel = request.app.babel
         self.locale = None
         self.tzinfo = None
+        # XXX: hack, only works for a single thread. We want to share the domain, I think
+        self.babel.domain.request = request
 
     def get_locale(self):
         """Returns the locale that should be used for this request as
@@ -302,3 +306,23 @@ class BabelRequestUtils:
         """
         locale = self.get_locale()
         return numbers.format_scientific(number, format=format, locale=locale)
+
+    def gettext(self, *args, **kwargs):
+        return self.babel.domain.gettext(*args, **kwargs)
+
+    _ = gettext  # noqa
+
+    def ngettext(self, *args, **kwargs):
+        return self.babel.domain.ngettext(*args, **kwargs)
+
+    def pgettext(self, *args, **kwargs):
+        return self.babel.domain.pgettext(*args, **kwargs)
+
+    def npgettext(self, *args, **kwargs):
+        return self.babel.domain.npgettext(*args, **kwargs)
+
+    def lazy_gettext(self, *args, **kwargs):
+        return LazyString(self.gettext, *args, **kwargs)
+
+    def lazy_pgettext(self, *args, **kwargs):
+        return LazyString(self.pgettext, *args, **kwargs)
