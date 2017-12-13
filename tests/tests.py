@@ -15,7 +15,7 @@ from pytz import timezone, UTC
 from babel import support, Locale
 import morepath
 import pytest
-from pytest import fixture, yield_fixture
+from pytest import fixture
 import webob.request
 
 import more.babel_i18n as babel_ext
@@ -24,10 +24,11 @@ from more.babel_i18n.request import BabelRequest
 from more.babel_i18n.domain import Domain
 
 text_type = str
+morepath.autoscan()
 
 
 @fixture
-def app():
+def test_app_class():
     class TestApp(BabelApp):
         root_path = os.path.dirname(__file__)
 
@@ -36,14 +37,19 @@ def app():
             request = BabelRequest(environ, self)
             return request
 
+    return TestApp
+
+
+@fixture
+def app(test_app_class):
     babel_settings = {
         'configure_jinja': False
     }
     morepath.autoscan()
-    TestApp.init_settings(dict(babel_i18n=babel_settings))
-    TestApp.commit()
+    test_app_class.init_settings(dict(babel_i18n=babel_settings))
+    test_app_class.commit()
 
-    app = TestApp()
+    app = test_app_class()
     app.babel_init()
     return app
 
