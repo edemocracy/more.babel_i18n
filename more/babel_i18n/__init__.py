@@ -13,8 +13,9 @@
 from __future__ import absolute_import
 
 from .core import BabelApp
+from .request import BabelRequest
 
 
 __all__ = (
-    'BabelApp'
+    'BabelApp', 'BabelRequest'
 )
