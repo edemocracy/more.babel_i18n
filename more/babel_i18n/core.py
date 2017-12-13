@@ -50,27 +50,6 @@ class BabelApp(morepath.App):
         domain = Domain(domain=cfg.domain)
         self.babel = BabelI18n(self, domain=domain, date_formats=DEFAULT_DATE_FORMATS.copy())
 
-        if cfg.configure_jinja:
-            self.jinja_env.filters.update(
-                datetimeformat=format_datetime,
-                dateformat=format_date,
-                timeformat=format_time,
-                timedeltaformat=format_timedelta,
-
-                numberformat=format_number,
-                decimalformat=format_decimal,
-                currencyformat=format_currency,
-                percentformat=format_percent,
-                scientificformat=format_scientific,
-            )
-            self.jinja_env.add_extension('jinja2.ext.i18n')
-            self.jinja_env.install_gettext_callables(
-                lambda x: get_domain().get_translations().ugettext(x),
-                lambda s, p, n: get_domain().get_translations()
-                                            .ungettext(s, p, n),
-                newstyle=True
-            )
-
 
 class BabelI18n:
     def __init__(self, app, domain, date_formats):

@@ -247,25 +247,6 @@ class TestGettext:
 
 class GettextTestCase(unittest.TestCase):
 
-    def test_template_basics(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app, default_locale='de_DE')
-
-        def t(x):
-            return flask.render_template_string('{{ %s }}' % x)
-
-        with app.test_request_context():
-            assert t("gettext('Hello %(name)s!', name='Peter')") == 'Hallo Peter!'  # noqa
-            assert t("ngettext('%(num)s Apple', '%(num)s Apples', 3)") == u'3 Äpfel'  # noqa
-            assert t("ngettext('%(num)s Apple', '%(num)s Apples', 1)") == u'1 Apfel'  # noqa
-            assert flask.render_template_string('''
-                {% trans %}Hello {{ name }}!{% endtrans %}
-            ''', name='Peter').strip() == 'Hallo Peter!'
-            assert flask.render_template_string('''
-                {% trans num=3 %}{{ num }} Apple
-                {%- pluralize %}{{ num }} Apples{% endtrans %}
-            ''', name='Peter').strip() == u'3 Äpfel'
-
     def test_domain(self):
         app = flask.Flask(__name__)
         babel_ext.Babel(app, default_locale='de_DE')
