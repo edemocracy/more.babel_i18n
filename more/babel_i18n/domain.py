@@ -14,6 +14,7 @@ import os
 from babel import support
 
 from .speaklater import LazyString
+from babel import Locale
 
 
 class Domain(object):
@@ -67,6 +68,20 @@ class Domain(object):
             self.cache[str(locale)] = translations
 
         return translations
+
+    def list_translations(self):
+        if not os.path.isdir(self.dirname):
+            return []
+        result = []
+        for folder in os.listdir(self.dirname):
+            locale_dir = os.path.join(self.dirname, folder, 'LC_MESSAGES')
+            if not os.path.isdir(locale_dir):
+                continue
+            if filter(lambda x: x.endswith('.mo'), os.listdir(locale_dir)):
+                result.append(Locale.parse(folder))
+        if not result:
+            result.append(Locale.parse(self.default_locale))
+        return result
 
     def gettext(self, string, **variables):
         """Translates a string with the current locale and passes in the

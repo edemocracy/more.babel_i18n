@@ -90,21 +90,7 @@ class BabelI18n:
 
         .. versionadded:: 0.6
         """
-
-        # XXX: Wouldn't it be better to list the locales from the domain?
-        dirname = os.path.join(self.app.root_path, 'translations')
-        if not os.path.isdir(dirname):
-            return []
-        result = []
-        for folder in os.listdir(dirname):
-            locale_dir = os.path.join(dirname, folder, 'LC_MESSAGES')
-            if not os.path.isdir(locale_dir):
-                continue
-            if filter(lambda x: x.endswith('.mo'), os.listdir(locale_dir)):
-                result.append(Locale.parse(folder))
-        if not result:
-            result.append(Locale.parse(self.default_locale))
-        return result
+        return self.domain.list_translations()
 
     @property
     def default_locale(self):
