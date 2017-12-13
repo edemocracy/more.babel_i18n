@@ -38,11 +38,11 @@ class Domain(object):
         """Returns a dictionary-like object for translation caching"""
         return self.cache
 
-    def get_translations_path(self, app):
+    def get_translations_path(self):
         """Returns the translations directory path. Override if you want
         to implement custom behavior.
         """
-        return self.dirname or os.path.join(app.root_path, 'translations')
+        return self.dirname
 
     def get_translations(self):
         """Returns the correct gettext translations that should be used for
@@ -59,7 +59,7 @@ class Domain(object):
 
         translations = cache.get(str(locale))
         if translations is None:
-            dirname = self.get_translations_path(self.request.app)
+            dirname = self.get_translations_path()
             translations = support.Translations.load(
                 dirname,
                 locale,

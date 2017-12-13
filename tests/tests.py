@@ -27,11 +27,14 @@ text_type = str
 morepath.autoscan()
 
 
+BABEL_SETTINGS = {
+    'translations_path': os.path.join(os.path.dirname(__file__), 'translations')
+}
+
+
 @fixture
 def test_app_class():
     class TestApp(BabelApp):
-        root_path = os.path.dirname(__file__)
-
         def test_request(self):
             environ = webob.request.BaseRequest.blank('/').environ
             request = BabelRequest(environ, self)
@@ -42,11 +45,12 @@ def test_app_class():
 
 @fixture
 def app(test_app_class):
-    babel_settings = {
+    custom_settings = {
+        **BABEL_SETTINGS,
         'configure_jinja': False
     }
     morepath.autoscan()
-    test_app_class.init_settings(dict(babel_i18n=babel_settings))
+    test_app_class.init_settings(dict(babel_i18n=custom_settings))
     test_app_class.commit()
 
     app = test_app_class()
@@ -196,7 +200,7 @@ class TestGettext:
 
     def test_lazy_pgettext(self, app, request, i18n):
         app.settings.babel_i18n.default_locale = 'de_DE'
-        domain = Domain(request, domain='messages')
+        domain = Domain(request, domain='messages', dirname=app.settings.babel_i18n.translations_path)
         domain_first = domain.lazy_pgettext('button', 'Hello Guest!')
         first = i18n.lazy_pgettext('button', 'Hello Guest!')
 
@@ -243,6 +247,12 @@ class TestGettext:
         domain = app.babel.domain
 
         assert isinstance(domain.get_translations(), support.NullTranslations)
+
+
+def test_default_translations_path(app):
+    app.settings.babel_i18n.translations_path = None
+    app.babel_init()
+    assert app.babel.domain.dirname == os.path.dirname(__file__) + "/translations"
 
 
 class GettextTestCase(unittest.TestCase):

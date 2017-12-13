@@ -11,6 +11,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import sys
 from babel import Locale
 import morepath
 from more.babel_i18n.domain import Domain
@@ -23,6 +24,10 @@ else:
 
 from .constants import DEFAULT_LOCALE, DEFAULT_TIMEZONE,\
     DEFAULT_DATE_FORMATS
+
+
+def find_app_root(app):
+    return os.path.dirname(sys.modules[app.__module__].__file__)
 
 
 class BabelApp(morepath.App):
@@ -47,7 +52,8 @@ class BabelApp(morepath.App):
         #:      returned in step one) is looked up.  If the return value
         #:      is anything but `None` this is used as new format string.
         #:      otherwise the default for that language is used.
-        domain = Domain(domain=cfg.domain)
+        translations_path = cfg.translations_path or os.path.join(find_app_root(self), 'translations')
+        domain = Domain(domain=cfg.domain, dirname=translations_path)
         self.babel = BabelI18n(self, domain=domain, date_formats=DEFAULT_DATE_FORMATS.copy())
 
 
@@ -123,6 +129,7 @@ class BabelI18n:
 def babel_i18n_settings():
     return {
         'default_locale': DEFAULT_LOCALE,
+        'translations_path': None,
         'default_timezone': DEFAULT_TIMEZONE,
         'configure_jinja': True,
         'domain': 'messages'
