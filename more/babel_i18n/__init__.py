@@ -12,7 +12,7 @@
 """
 from __future__ import absolute_import
 
-from .core import BabelApp
+from .app import BabelApp
 from .request import BabelRequest
 
 

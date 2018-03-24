@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-    more.babel_i18n.babel
-    ~~~~~~~~~~~~~~~~~~~~~
+    more.babel_i18n.core
+    ~~~~~~~~~~~~~~~~~~~~
 
-    The actual Flask extension.
+    App with Babel support.
 
     :copyright:
         (c) 2017 by Tobias dpausp
@@ -32,9 +32,9 @@ def find_app_root(app):
 
 class BabelApp(morepath.App):
     """Central controller class that can be used to configure how
-    Flask-Babel behaves.  Each application that wants to use Flask-Babel
-    has to create, or run :meth:`init_app` on, an instance of this class
-    after the configuration was initialized.
+    more.babel_i18n behaves.  Each application that wants to use Babel
+    has to subclass this. :meth:`babel_init` must be called before using
+    Babel methods.
     """
 
     def babel_init(self):
@@ -43,7 +43,7 @@ class BabelApp(morepath.App):
         cfg = self.settings.babel_i18n
         #: a mapping of Babel datetime format strings that can be modified
         #: to change the defaults.  If you invoke :func:`format_datetime`
-        #: and do not provide any format string Flask-Babel will do the
+        #: and do not provide any format string more.babel_i18n will do the
         #: following things:
         #:
         #: 1.   look up ``date_formats['datetime']``.  By default ``'medium'``

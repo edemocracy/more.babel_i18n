@@ -92,7 +92,7 @@ class BabelRequestUtils:
             refresh()
             flash(gettext('Language was changed'))
 
-        Without that refresh, the :func:`~flask.flash` function would probably
+        Without that refresh, the :func:`~flash` function would probably
         return English text and a now German page.
         """
         self.tzinfo = None

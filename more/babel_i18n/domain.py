@@ -19,8 +19,8 @@ from babel import Locale
 
 class Domain(object):
     """Localization domain. By default it will look for tranlations in the
-    Flask application directory and "messages" domain - all message
-    catalogs should be called ``messages.mo``.
+    application directory and "messages" domain - all message catalogs 
+    should be called ``messages.mo``.
     """
 
     def __init__(self, request=None, dirname=None, domain='messages'):
