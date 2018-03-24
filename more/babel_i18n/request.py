@@ -24,8 +24,8 @@ else:  # pragma: no cover
 
 
 class BabelRequest(morepath.Request):
-    def __init__(self, environ, app, **kw):
-        morepath.Request.__init__(self, environ, app, **kw)
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
         self.i18n = BabelRequestUtils(self)
 
 
