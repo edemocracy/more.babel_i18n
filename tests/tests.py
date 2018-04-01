@@ -19,8 +19,8 @@ from pytest import fixture
 import webob.request
 
 import more.babel_i18n as babel_ext
-from more.babel_i18n.core import BabelApp
-from more.babel_i18n.request import BabelRequest
+from more.babel_i18n.app import BabelApp
+from more.babel_i18n.request_utils import BabelRequestUtils
 from more.babel_i18n.domain import Domain
 
 text_type = str
@@ -37,7 +37,7 @@ def test_app_class():
     class TestApp(BabelApp):
         def test_request(self):
             environ = webob.request.BaseRequest.blank('/').environ
-            request = BabelRequest(environ, self)
+            request = morepath.Request(environ, self)
             return request
 
     return TestApp
@@ -65,7 +65,9 @@ def request(app):
 
 @fixture
 def i18n(request):
-    return request.i18n
+    i18n = BabelRequestUtils(request)
+    request.i18n = i18n
+    return i18n
 
 
 @fixture
@@ -320,13 +322,8 @@ class TestIntegration:
             # should use current_app
             assert get_state(app=None, silent=True) == app.extensions['babel']
 
-    def test_get_locale(self):
-        assert babel_ext.get_locale() is None
-
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app)
-        with app.app_context():
-            assert babel_ext.get_locale() == Locale.parse("en")
+    def test_get_locale(self, i18n):
+        i18n.get_locale() == Locale.parse("en")
 
     def test_get_timezone_none(self):
         assert babel_ext.get_timezone() is None
@@ -361,7 +358,3 @@ class TestIntegration:
 
             dt_usertz = babel_ext.to_user_timezone(dt_utc)
             assert dt_usertz is not None
-
-
-if __name__ == '__main__':
-    unittest.main()

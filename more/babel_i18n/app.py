@@ -15,6 +15,7 @@ import sys
 from babel import Locale
 import morepath
 from more.babel_i18n.domain import Domain
+from more.babel_i18n.request_utils import BabelRequestUtils
 try:
     from pytz.gae import pytz
 except ImportError:
@@ -134,3 +135,12 @@ def babel_i18n_settings():
         'configure_jinja': True,
         'domain': 'messages'
     }
+
+
+@BabelApp.tween_factory()
+def babel_tween_factory(app, handler):
+    def babel_tween(request):
+        request.i18n = BabelRequestUtils(request)
+        return handler(request)
+
+    return babel_tween

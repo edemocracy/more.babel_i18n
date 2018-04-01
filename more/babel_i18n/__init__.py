@@ -13,7 +13,6 @@
 from __future__ import absolute_import
 
 from .app import BabelApp
-from .request import BabelRequest
 
 
 __all__ = (

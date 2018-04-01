@@ -22,13 +22,6 @@ else:  # pragma: no cover
     timezone = pytz.timezone
     UTC = pytz.UTC
 
-
-class BabelRequest(morepath.Request):
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.i18n = BabelRequestUtils(self)
-
-
 class BabelRequestUtils:
     """
     Various helper methods which are bound to the given request.
