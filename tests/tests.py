@@ -299,12 +299,7 @@ class GettextTestCase(unittest.TestCase):
             assert 'de_DE' not in app2.extensions["babel"].domain.cache
 
 
-class IntegrationTestCase(unittest.TestCase):
-    def test_configure_jinja(self):
-        app = flask.Flask(__name__)
-        babel_ext.Babel(app, configure_jinja=False)
-        assert not app.jinja_env.filters.get("scientificformat")
-
+class TestIntegration:
     def test_get_state(self):
         # app = None; app.extensions = False; babel = False; silent = True;
         assert get_state(silent=True) is None
