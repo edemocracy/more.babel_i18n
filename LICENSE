@@ -1,4 +1,7 @@
-Copyright (c) 2017 by Tobias dpausp
+Copyright (c) 2018 by Tobias dpausp
+
+Parts of the library are taken from flask-babelsuper, original copyright:
+
 Copyright (c) 2016 by Peter Justin, Serge S. Koval, Armin Ronacher and
 contributors.
 
