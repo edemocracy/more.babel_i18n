@@ -45,7 +45,7 @@ class BabelRequestUtils:
         if self.locale is None:
             if self.babel.locale_selector_func is not None:
                 locale = self.babel.load_locale(
-                    self.babel.locale_selector_func()
+                    self.babel.locale_selector_func(self.request)
                 )
             else:
                 locale = self.babel.default_locale
