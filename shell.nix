@@ -22,6 +22,7 @@ in pkgs.stdenv.mkDerivation {
     mypy
     pylint
     python 
+    setuptools_scm
     twine
     wheel
   ]);
