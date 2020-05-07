@@ -16,7 +16,7 @@ in pkgs.stdenv.mkDerivation {
     pipenv
     zsh
   ] ++
-  (with python37Packages; [
+  (with python38Packages; [
     autopep8
     ipdb
     mypy
