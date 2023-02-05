@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "more-babel-i18n"
+version = "23.02.0"
+description = "i18n/l10n support for Morepath applications and Jinja2 templates"
+authors = ["Tobias dpausp <dpausp@posteo.de>"]
+license = "BSD-3-Clause"
+readme = "README.md"
+repository = "https://github.com/edemocracy/more.babel_i18n"
+packages = [{include = "more", from = "src" }]
+keywords = ["babel", "i18n", "translation", "morepath", "jinja2"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+Babel = "^2.11.0"
+morepath = "^0.19"
+Jinja2 = "^3.1.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

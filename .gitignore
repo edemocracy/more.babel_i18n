@@ -9,3 +9,8 @@
 more.babel_i18n.egg-info/
 .cache/
 .eggs/
+
+# Devenv
+.devenv*
+devenv.local.nix
+
